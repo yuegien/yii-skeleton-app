@@ -1,0 +1,55 @@
+#summary The Yii skeleton application contains a ParseCacheBehavior which has the ability to handle caching of text contents.
+
+= Introduction =
+
+The Yii skeleton application contains a ParseCacheBehavior which has the ability to handle caching of text contents.  This behavior is made to cache large amounts of parsed data in a table without much effort from the programmer.  I had the Markdown parser in mind when developing this.  I went about using the CMarkDown widget in my view to parse an 'about' section for a user page.  I then realized that the parsing took a whopping 0.1 seconds on average on my machine.
+
+Wondering how the main Yii developer got past this, I took a look at the blog tutorial for his posts.  I then saw that he had the each post had an extra field called `postDisplay` that held a cache of the parsed post, so it only had to parse it once.
+
+I thought this idea genius but thought I could make it better.  So I did.  This behavior caches any fields you want in it's own table.  You can use it on as many tables as you want, on as many rows as you want, and on as many columns ass you want.
+
+To install, but this in your model:
+{{{
+public function behaviors(){
+	return array(
+		'ParseCacheBehavior' => array(
+			'class' => 'application.components.ParseCacheBehavior',
+			'columns' => array('list', 'of', 'columns'), //the columns you would like to cache
+			//'parserMethod' => 'methodName', //optional.  The method that parses the data
+		)
+	);
+}
+}}}
+Set 'columns' to the columns you would like to cache
+
+And in you relations() add the following
+{{{
+public function relations() {
+	return array(
+		'parsecache' => $this->parseCacheRelation(), //add this rule
+	);
+}
+}}}
+
+That is all that is needed for set-up.  By default it will parse the cached fields with CMarkdownParser and CHtmlPurifier.  Often this is enough.  If you want it to do something custom, create a method in your model with the signature
+{{{
+public function <methodName>($column) {
+	return <parsed $column>;
+}	
+}}}
+and set the 'parserMethod' option in behaviors() to the name of the method.  $column is the name of the column that is being parsed, not the actual data.  This is so you can parse it differently depending on the column.  To get the data, you can use (as you might expect) $this->{$column}
+
+To access the parsed and cached data (for instance in your view), use `$model->getCache('attribute');`. Example:
+{{{
+echo $post->getCache('content');
+}}}
+It will automatically pull the cached content from the database (unless it is already loaded if you are using eager loading).  If it is not in the database (this might be the case if you are using a legacy database), it will parse the original content and cache it and then return it.  It is very automatic.
+
+You can also use eager loading as usual:
+{{{
+Post::model()->with(parsecache)->findAll($criteria));
+}}}
+This way the parsed cache is loading in a JOIN statement which can be faster if you are loading more than one AR.
+
+
+When you save an AR, it automatically does the parsing and caching.  It parse the data in afterSave() by default.
