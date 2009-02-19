@@ -1,10 +1,15 @@
 #summary The Yii skeleton application contains a `ParseCacheBehavior` which has the ability to handle caching of text contents.
 
+== Introduction ==
+
 The Yii skeleton application contains `ParseCacheBehavior` which has the ability to handle caching of parsed text contents (eg blog content).  This behavior is made to cache large amounts of parsed data in a database table without much effort from the programmer.
 
 I had the Markdown parser in mind when developing this.  I went about using the `CMarkdown` widget in my view to parse an 'about' section for a user page.  I then realized that the parsing took a whopping 0.1 seconds on average on my machine.  Taking a look at the blog tutorial I noticed that the parsed content was cached in an extra field called `postDisplay`.  This way it only had to be parsed once.
 
-I thought this idea genius but thought I could make it better.  So I did.  This behavior caches any fields you want in it's own table.  You can use it on as many tables as you want, on as many rows as you want, and on as many columns ass you want, and yet only have to install one caching table.
+I thought this idea genius but thought I could make it better.  So I did.  This behavior caches any fields you want in it's own table.  You can use it on as many tables as you want, on as many rows as you want, and on as many columns as you want, and yet only have to install one caching table.
+
+== Installing ==
+
 To install, first set up the behavior in your model:
 {{{
 public function behaviors(){
@@ -39,13 +44,19 @@ CREATE TABLE IF NOT EXISTS `parsecache` (
   PRIMARY KEY (`table`,`id`,`column`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 }}}
-That is all that is needed for set-up.  By default it will parse the cached fields with `CMarkdownParser` and `CHtmlPurifier`.  Often this is enough.  If you want it to do something else, create a method in your model with the signature
+That is all that is needed for set-up.
+
+== Defining parse method ==
+
+By default it will parse the cached fields with `CMarkdownParser` and `CHtmlPurifier`.  Often this is enough.  If you want it to do something else, create a method in your model with the signature
 {{{
 public function <methodName>($column) {
 	return <parsed $column>;
 }	
 }}}
 and set the 'parserMethod' option in `behaviors()` to the name of the method.  `$column` is the name of the column that is being parsed, not the actual data.  This is so you can parse it differently depending on the column.  To get the data, you can use (as you might expect) `$this->{$column}`.  The method must return the parsed data.
+
+== Accessing cached data ==
 
 To access the parsed and cached data (for instance in your view), use `$model->getCache('attribute')`. Example:
 {{{
@@ -59,5 +70,6 @@ Post::model()->with('parsecache')->findAll($criteria));
 }}}
 This way the cache is loaded in a JOIN statement which can be faster if you are loading multiple ARs.
 
+== When and where to parse the data ==
 
-When you save an AR, it automatically does the parsing and caching.  It will always save the cache in `afterSave()`. By default it will also parse the cache in `afterSave()`.  Sometimes you want it to be cached in somewhere else besides `afterSave()`, in which case you call `$model->cacheColumns()` manually in the desired location.  For instance you may want the cache parsed in `beforeValidate()` (like the blog tutorial does it) if for instance you have a "preview module" or something of the sort.  If you simply want it to cache in `beforeValidate()` however, `ParseCacheBehavior` gives you a simple option `$cacheBeforeValidate` to simply cache in `beforeValidate()`.  This is simply a convenience option as parsing the data in `beforeValidate()` is a popular need.
+When you save an AR, it automatically does the parsing and caching.  It will always save the cache in `afterSave()`. By default it will also parse the cache in `afterSave()`.  Sometimes you want it to be cached in somewhere else besides `afterSave()`, in which case you can call `$model->cacheColumns()` manually in the desired location (and it will not be executed twice).  For instance you may want the data parsed in `beforeValidate()` (like in the blog tutorial) if for instance you have a "preview module" or something of the sort, and you need the parsed data before saving it.  If you simply want it to cache in `beforeValidate()` however, `ParseCacheBehavior` gives you the simple option `$cacheBeforeValidate` to easilly cache in `beforeValidate()`.  This is simply a convenience option as parsing the data in `beforeValidate()` is a popular need.
