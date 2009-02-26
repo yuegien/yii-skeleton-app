@@ -1,12 +1,8 @@
-#summary The Yii skeleton application contains a `ParseCacheBehavior` which has the ability to handle caching of text contents.
+#summary The Yii skeleton application contains a `ParseCacheBehavior` which has the ability to handle parsing & caching of attributes (think CMarkdown).
 
 == Introduction ==
 
-The Yii skeleton application contains `ParseCacheBehavior` which has the ability to handle caching of parsed text contents (eg blog content).  This behavior is made to cache large amounts of parsed data in a database table without much effort from the programmer.
-
-I had the Markdown parser in mind when developing this.  I went about using the `CMarkdown` widget in my view to parse an 'about' section for a user page.  I then realized that the parsing took a whopping 0.1 seconds on average on my machine.  Taking a look at the blog tutorial I noticed that the parsed content was cached in an extra field called `postDisplay`.  This way it only had to be parsed once.
-
-I thought this idea genius but thought I could make it better.  So I did.  This behavior caches any fields you want in it's own table.  You can use it on as many tables as you want, on as many rows as you want, and on as many columns as you want, and yet only have to install one caching table.
+The Yii skeleton application contains `ParseCacheBehavior` which has the ability to handle parsing and caching of attributes (e.g. a blog article being parsed with markdown) without much effort from the programmer.  All you have to do is define the attributes to be parsed & cached, the callback to do the parsing, and the attribute name to store the cached data in.  By default it will use an internal function to parse the data that uses `CMarkdown::safeTransform`.  Safe parsing data with markdown can have a *lot* of overhead and thus this behavior is very useful for caching it.  The default attribute to store the cached data in is the same name as the source attribute but with the configurable suffix "Parsed".  So for instance, if the raw content for a article is stored in `content`, the parsed content would be stored in `contentParsed` by default.
 
 == Installing ==
 
@@ -16,60 +12,35 @@ public function behaviors(){
 	return array(
 		'ParseCacheBehavior' => array(
 			'class' => 'application.components.ParseCacheBehavior',
-			'columns' => array('list', 'of', 'columns'), //the columns you would like to cache
+			'attributes' => array('list', 'of', 'attributes'), //the attributes you would like to cache
 			//'parserMethod' => 'methodName', //optional.  The method that parses the data
 			//more options optional
 		)
 	);
 }
 }}}
-Set 'columns' to the columns you would like to cache
+Set 'attributes' to the attributes you would like to parse&cache
 
-And in you relations() add the following
-{{{
-public function relations() {
-	return array(
-		'parsecache' => $this->parseCacheRelation(), //add this rule
-	);
-}
-}}}
-
-And install the table to hold the parsed cache
-{{{
-CREATE TABLE IF NOT EXISTS `parsecache` (
-  `table` varchar(20) NOT NULL,
-  `id` int(11) NOT NULL,
-  `column` varchar(20) NOT NULL,
-  `content` text NOT NULL,
-  PRIMARY KEY (`table`,`id`,`column`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
-}}}
 That is all that is needed for set-up.
 
 == Defining parse method ==
 
 By default it will parse the cached fields with `CMarkdownParser` and `CHtmlPurifier`.  Often this is enough.  If you want it to do something else, create a method in your model with the signature
 {{{
-public function <methodName>($column) {
-	return <parsed $column>;
+public function <methodName>($attribute) {
+	return <parsed $attribute>;
 }	
 }}}
-and set the 'parserMethod' option in `behaviors()` to the name of the method.  `$column` is the name of the column that is being parsed, not the actual data.  This is so you can parse it differently depending on the column.  To get the data, you can use (as you might expect) `$this->{$column}`.  The method must return the parsed data.
+and set the 'parserMethod' option in `behaviors()` to the name of the method.  `$attribute` is the name of the attribute that is being parsed, not the actual data.  This is so you can parse it differently depending on the attribute.  To get the data, you can use (as you might expect) `$this->{$attribute}`.  The method must return the parsed data.
 
 == Accessing cached data ==
 
-To access the parsed and cached data (for instance in your view), use `$model->getCache('attribute')`. Example:
+To access the parsed and cached data (for instance in your view), use `$model->getParsed('attribute')`. Example:
 {{{
-echo $post->getCache('content');
+echo $post->getParsed('content');
 }}}
-It will automatically pull the cached content from the database (unless it is already loaded if you are using eager loading).  If it is not in the database (this might be the case if you are using a legacy database), it will parse the original content and cache it and then return it.  It is all very automatic.
-
-You can also use eager loading as usual:
-{{{
-Post::model()->with('parsecache')->findAll($criteria));
-}}}
-This way the cache is loaded in a JOIN statement which can be faster if you are loading multiple ARs.
+The reason you may want to use this method instead of getting the data directly via `$post->contentParsed` is that `getParsed()` will parse and cache the data first if it has not already been (but it should be, unless you already had data in the database before installing this behavior).
 
 == When and where to parse the data ==
 
-When you save an AR, it automatically does the parsing and caching.  It will always save the cache in `afterSave()`. By default it will also parse the cache in `afterSave()`.  Sometimes you want it to be cached in somewhere else besides `afterSave()`, in which case you can call `$model->cacheColumns()` manually in the desired location (and it will not be executed twice).  For instance you may want the data parsed in `beforeValidate()` (like in the blog tutorial) if for instance you have a "preview module" or something of the sort, and you need the parsed data before saving it.  If you simply want it to cache in `beforeValidate()` however, `ParseCacheBehavior` gives you the simple option `$cacheBeforeValidate` to easilly cache in `beforeValidate()`.  This is simply a convenience option as parsing the data in `beforeValidate()` is a popular need.
+When you validate an AR, it automatically does the parsing of the attributes that you have configured to do so. If you would rather not have the attributes parsed until `beforeSave`, set `cacheBeforeValidate` to `false` in the behavior.  You can also parse the attributes anywhere you wish by calling `$model->parseAttributes()` manually in the desired location (it is smart enough not to parsed it twice in a row).
