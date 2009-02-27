@@ -1,4 +1,4 @@
-#summary TextEdit is a module that supplies CMS like edit-in-place ajax functionality with markup.
+#summary TextEdit is a module that supplies CMS like edit-in-place ajax functionality with markup syntax.
 
 = Introduction =
 To put a textual edit-in-place in a view, simply call this in the desired location:
@@ -11,4 +11,4 @@ If you are a regular user, it simply prints out the text block.  If you are an a
 
 I had freelance clients in mind when creating this. They tend to like to tweak text blocks on their sites a lot...  This way they can do it themselves, and have fun, and love you.
 
-Markup is cached with [parsecache ParseCacheBehavior]
+Markup parsing is cached with [parsecache ParseCacheBehavior]
