@@ -1,0 +1,14 @@
+#summary TextEdit is a module that supplies CMS like edit-in-place ajax functionality with markup.
+
+= Introduction =
+To put a textual edit-in-place in a view, simply call this in the desired location:
+{{{
+$this->widget('application.modules.TextEdit.components.TextEditor', array('id'=>'unique id'));
+}}}
+Where the `id` attribute a unique id representing the text block.
+
+If you are a regular user, it simply prints out the text block.  If you are an admin, it will be an edit-in-place text block (with ajax).
+
+I had freelance clients in mind when creating this. They tend to like to tweak text blocks on their sites a lot...  This way they can do it themselves, and have fun, and love you.
+
+Markup is cached with [parsecache ParseCacheBehavior]
