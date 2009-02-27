@@ -12,3 +12,5 @@ If you are a regular user, it simply prints out the text block.  If you are an a
 I had freelance clients in mind when creating this. They tend to like to tweak text blocks on their sites a lot...  This way they can do it themselves, and have fun, and love you.
 
 Markup parsing is cached with [parsecache ParseCacheBehavior]
+
+All edits are logged to a file under the `watch` level
