@@ -14,3 +14,5 @@ Freelance clients were in mind when creating this. They tend to like to tweak te
 Markup parsing is cached with [parsecache ParseCacheBehavior]
 
 All edits are logged to a file under the `watch` level.  You may find this file at `/protected/runtime/application.log`
+
+Note: This module requires `ParseCacheBehavior` to be installed and be set to auto-load.
