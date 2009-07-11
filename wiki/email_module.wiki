@@ -29,3 +29,5 @@ $email->send();
 }}}
 
 Instead of defining the message with `$email->message`, you could instead define a view (and layout if you wish) to use as the email content.  This is much more flexible and maintains MVC better.
+
+The email module also catches failed emails and stores them in the `failedemail` table.  The FailedEmailController (within the email module) contains functions on viewing and re-sending failed emails.
