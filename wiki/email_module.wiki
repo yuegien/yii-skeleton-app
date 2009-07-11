@@ -2,24 +2,26 @@
 
 = Usage =
 
-You can configure the extension as follows:
+You can configure the module as follows:
 {{{
-'components'=>array(
-	'email'=>array(
-		'class'=>'application.extensions.email.Email',
-		'delivery'=>'php', //Will use the php mailing function.  
-		//May also be set to 'debug' to instead dump the contents of the email into the view
+'modules'=>array(
+	'email' => array(
+		'delivery'=>'php', //set to 'debug' for debugging
+		//'from'=>'name <name@example.com>' //optional, can also be set per email
 	),
+	...
+),
 ...
 }}}
 
 You need to put the debug widget somewhere in the view or layout, if you wish to use debug mode (already done in skeleton application)
 {{{
-$this->widget('application.extensions.email.Debug');
+$this->widget('email.components.Debug');
 }}}
 Example code:
 {{{
-$email = Yii::app()->email;
+Yii::app()->getModule('email');
+$email = new Email;
 $email->to = 'admin@example.com';
 $email->subject = 'Hello';
 $email->message = 'Hello brother';
